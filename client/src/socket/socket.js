@@ -24,8 +24,12 @@ export const useSocket = () => {
 
   // Connect to socket server
   const connect = (username) => {
-    socket.connect();
-    if (username) {
+    if (!socket.connected) {
+      socket.connect();
+      socket.once('connect', () => {
+        socket.emit('user_join', username);
+      });
+    } else {
       socket.emit('user_join', username);
     }
   };
@@ -37,7 +41,7 @@ export const useSocket = () => {
 
   // Send a message
   const sendMessage = (message) => {
-    socket.emit('send_message', { message });
+    socket.emit('send_message', { text: message });
   };
 
   // Send a private message
@@ -54,11 +58,17 @@ export const useSocket = () => {
   useEffect(() => {
     // Connection events
     const onConnect = () => {
+      console.log('✅ Socket.io connected');
       setIsConnected(true);
     };
 
     const onDisconnect = () => {
+      console.log('❌ Socket.io disconnected');
       setIsConnected(false);
+    };
+
+    const onError = (error) => {
+      console.error('❌ Socket.io error:', error);
     };
 
     // Message events
@@ -74,6 +84,7 @@ export const useSocket = () => {
 
     // User events
     const onUserList = (userList) => {
+      console.log('🔁 Received user_list:', userList);
       setUsers(userList);
     };
 
@@ -84,7 +95,7 @@ export const useSocket = () => {
         {
           id: Date.now(),
           system: true,
-          message: `${user.username} joined the chat`,
+          text: `${user.username} joined the chat`,
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -97,7 +108,7 @@ export const useSocket = () => {
         {
           id: Date.now(),
           system: true,
-          message: `${user.username} left the chat`,
+          text: `${user.username} left the chat`,
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -111,6 +122,7 @@ export const useSocket = () => {
     // Register event listeners
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('error', onError);
     socket.on('receive_message', onReceiveMessage);
     socket.on('private_message', onPrivateMessage);
     socket.on('user_list', onUserList);
@@ -122,6 +134,7 @@ export const useSocket = () => {
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      socket.off('error', onError);
       socket.off('receive_message', onReceiveMessage);
       socket.off('private_message', onPrivateMessage);
       socket.off('user_list', onUserList);

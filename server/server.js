@@ -13,9 +13,20 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
+// During local development allow requests from common dev ports (5173/5174)
+// and fall back to allowing the request's origin. In production set CLIENT_URL.
+const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174'].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // allow requests with no origin (like curl, mobile apps)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // for development convenience allow any localhost origin
+      if (origin.startsWith('http://localhost')) return callback(null, true);
+      return callback(new Error('Origin not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -40,13 +51,14 @@ io.on('connection', (socket) => {
     users[socket.id] = { username, id: socket.id };
     io.emit('user_list', Object.values(users));
     io.emit('user_joined', { username, id: socket.id });
-    console.log(`${username} joined the chat`);
+    console.log(`${username} joined the chat — socket id: ${socket.id}`);
+    console.log('Current users:', Object.values(users).map(u => `${u.username}:${u.id}`).join(', '));
   });
 
   // Handle chat messages
   socket.on('send_message', (messageData) => {
     const message = {
-      ...messageData,
+      text: messageData.text,
       id: Date.now(),
       sender: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
@@ -84,7 +96,7 @@ io.on('connection', (socket) => {
       id: Date.now(),
       sender: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
-      message,
+      text: message,
       timestamp: new Date().toISOString(),
       isPrivate: true,
     };
@@ -98,7 +110,7 @@ io.on('connection', (socket) => {
     if (users[socket.id]) {
       const { username } = users[socket.id];
       io.emit('user_left', { username, id: socket.id });
-      console.log(`${username} left the chat`);
+      console.log(`${username} left the chat — socket id: ${socket.id}`);
     }
     
     delete users[socket.id];
@@ -106,6 +118,7 @@ io.on('connection', (socket) => {
     
     io.emit('user_list', Object.values(users));
     io.emit('typing_users', Object.values(typingUsers));
+    console.log('Users after disconnect:', Object.values(users).map(u => `${u.username}:${u.id}`).join(', '));
   });
 });
 
