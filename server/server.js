@@ -13,20 +13,15 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
-// During local development allow requests from common dev ports (5173/5174)
-// and fall back to allowing the request's origin. In production set CLIENT_URL.
-const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174'].filter(Boolean);
+
+// Define the CLIENT_URL using the environment variable set in Render.
+// Fallback to local development URL if not set (for local testing).
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      // allow requests with no origin (like curl, mobile apps)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      // for development convenience allow any localhost origin
-      if (origin.startsWith('http://localhost')) return callback(null, true);
-      return callback(new Error('Origin not allowed by CORS'));
-    },
+    // The origin must be the Netlify URL (https://wk7.netlify.app)
+    origin: CLIENT_URL,
     methods: ['GET', 'POST'],
     credentials: true,
   },
