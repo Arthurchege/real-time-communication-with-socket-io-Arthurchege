@@ -44,11 +44,10 @@ This terminal will run the Node.js back-end. You need to be inside the `server` 
 
 This terminal will run the React development environment. You need to be inside the `client` directory for these commands.
 
-| Step            | Command       | Description                                                                                                      |
-| :-------------- | :------------ | :--------------------------------------------------------------------------------------------------------------- |
-| **A. Navigate** | `cd client`   | Move into the client folder.                                                                                     |
-| **B. Install**  | `npm install` | Download and install required React dependencies (`react`, `firebase`, `socket.io-client`, `tailwindcss`, etc.). |
-| **C. Start**    | `npm run dev` | Start the client. This will open the application in your browser (usually **`http://localhost:5173`**).          |
+| Step | Command | Description |
+| **A. Navigate** | `cd client` | Move into the client folder. |
+| **B. Install** | `npm install` | Download and install required React dependencies (`react`, `firebase`, `socket.io-client`, `tailwindcss`, etc.). |
+| **C. Start** | `npm run dev` | Start the client. This will open the application in your browser (usually **`http://localhost:5173`**). |
 
 **Keep this terminal window running.**
 
@@ -64,3 +63,5 @@ This terminal will run the React development environment. You need to be inside 
 ## 📸 Screenshots
 
 Screenshots are in the screenshot folder.
+
+(Testing the ci/cd pipeline)
