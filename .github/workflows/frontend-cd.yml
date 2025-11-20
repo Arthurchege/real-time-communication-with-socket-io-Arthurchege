@@ -1,0 +1,56 @@
+# .github/workflows/frontend-cd.yml
+name: Frontend CI/CD (Netlify)
+
+# Trigger the workflow only when code is pushed to the 'main' branch
+# and only if files within the 'client/' subdirectory are changed.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "client/**"
+
+jobs:
+  # 1. Continuous Integration (CI) - Checks code and generates production build
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./client # Executes command inside the client folder
+
+      - name: Build React App (Production)
+        run: npm run build
+        working-directory: ./client
+        env:
+          # Passes the live backend URL for the production build
+          VITE_BACKEND_URL: https://real-time-communication-with-socket-io-990a.onrender.com
+
+  # 2. Continuous Deployment (CD) - Deploy to Netlify
+  deploy:
+    needs: build # Only run deploy if the build job succeeds
+    runs-on: ubuntu-latest
+    # This step uses the secrets you just saved
+    environment: Production # Optional: Tags this deployment as production environment
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Netlify
+        uses: netlify/actions/cli@master
+        env:
+          # Reads the secrets saved in GitHub repository settings
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        with:
+          args: deploy --prod
+          # The publish directory where the built files (dist) are located relative to the client base
+          publish-dir: ./client/dist
